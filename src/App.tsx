@@ -40,6 +40,9 @@ export default function App() {
     nextRule: 'Calibration',
     dynamicYieldOracleEnabled: false,
     exitReason: null,
+    consecutiveMisses: 0,
+    entropyFails: 0,
+    breakerReason: null,
   });
 
   // Track undone spins for standard Redo protocol operations
@@ -88,6 +91,9 @@ export default function App() {
       nextRule: 'Calibration',
       dynamicYieldOracleEnabled: session.dynamicYieldOracleEnabled,
       exitReason: null,
+      consecutiveMisses: 0,
+      entropyFails: 0,
+      breakerReason: null,
     };
 
     newSpins.forEach(spin => {
@@ -129,6 +135,9 @@ export default function App() {
       nextRule: 'Calibration',
       dynamicYieldOracleEnabled: false,
       exitReason: null,
+      consecutiveMisses: 0,
+      entropyFails: 0,
+      breakerReason: null,
     });
     setManualScoreOffset(0);
     setRedoStack([]);

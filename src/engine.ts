@@ -84,15 +84,31 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
 
   let strikeType: StrikeType = 'Calibration';
   let scoreDelta = 0;
+  let newConsecutiveMisses = state.consecutiveMisses || 0;
+  let newEntropyFails = state.entropyFails || 0;
 
   // Evaluate the previous targets against the current hit
   if (state.nextDSA > 0 && state.nextDSB > 0) {
       if (hitDS === state.nextDSA || hitDS === state.nextDSB) {
           scoreDelta = 4; // +6 Payout - 2 Unit Cost
           strikeType = 'Win';
+          newConsecutiveMisses = 0;
+          newEntropyFails = 0;
       } else {
           scoreDelta = -2; // Total Miss
           strikeType = 'Miss';
+          newConsecutiveMisses += 1;
+          
+          if (hitDS > 0) {
+              const distA = Math.abs(hitDS - state.nextDSA);
+              const distB = Math.abs(hitDS - state.nextDSB);
+              const minDist = Math.min(distA, distB);
+              if (minDist >= 2) {
+                  newEntropyFails += 1;
+              } else {
+                  newEntropyFails = 0;
+              }
+          }
       }
   } else if (state.nextDSA === 0 && state.spins.length > 0) {
       scoreDelta = 0; // Zero Pause
@@ -113,10 +129,37 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
 
   let newRollingWR = activeRounds >= 6 ? (winRounds / activeRounds) : 0.33;
   let newTableRequiresPause = state.tableRequiresPause;
+  let newBreakerReason = state.breakerReason || null;
 
-  if (activeRounds >= 6) {
-      if (newRollingWR < 0.25) newTableRequiresPause = true;  
-      if (newRollingWR >= 0.33) newTableRequiresPause = false; 
+  let pauseThreshold = 0.25;
+  if (state.dynamicYieldOracleEnabled) {
+      if (state.currentScore >= 10) {
+          pauseThreshold = 0.33;
+      } else if (state.currentScore >= 4) {
+          pauseThreshold = 0.30;
+      }
+  }
+
+  let wantsPause = false;
+  let currentReason: string | null = null;
+  
+  if (newEntropyFails >= 2) {
+      wantsPause = true;
+      currentReason = "ENTROPY LOCK: Extreme Spatial Miss";
+  } else if (newConsecutiveMisses >= 3) {
+      wantsPause = true;
+      currentReason = "VELOCITY LOCK: 3 Consecutive Misses";
+  } else if (activeRounds >= 6 && newRollingWR < pauseThreshold) {
+      wantsPause = true;
+      currentReason = "VOLATILITY LOCK: Win Rate Degradation";
+  }
+
+  if (wantsPause) {
+      newTableRequiresPause = true;
+      newBreakerReason = currentReason;
+  } else if (newRollingWR >= 0.33 && newConsecutiveMisses < 3 && newEntropyFails < 2) {
+      newTableRequiresPause = false;
+      newBreakerReason = null;
   }
 
   const isEffectivelyPaused = state.isManualPause || (state.isAutoBreakerEnabled && newTableRequiresPause);
@@ -219,6 +262,9 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
     nextRule: newRule,
     dynamicYieldOracleEnabled: state.dynamicYieldOracleEnabled,
     exitReason,
+    consecutiveMisses: newConsecutiveMisses,
+    entropyFails: newEntropyFails,
+    breakerReason: newBreakerReason,
   };
 }
 

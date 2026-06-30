@@ -39,4 +39,7 @@ export interface EngineState {
   nextRule: string;
   dynamicYieldOracleEnabled: boolean;
   exitReason: string | null;
+  consecutiveMisses: number;
+  entropyFails: number;
+  breakerReason: string | null;
 }

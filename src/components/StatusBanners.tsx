@@ -83,8 +83,13 @@ export default function StatusBanners({
            exit={{ opacity: 0, height: 0 }}
            className="bg-red-500/10 border-2 border-red-500/40 p-4 rounded-2xl flex items-center justify-center mb-4"
         >
-           <p className="text-red-400 font-mono text-sm font-bold text-center">
-             ⚠️ CIRCUIT BREAKER ENGAGED. Rolling Win Rate: {(session.rollingWinRate * 100).toFixed(1)}%. Bankroll Frozen.
+           <p className="text-red-400 font-mono text-sm font-bold text-center flex flex-col gap-1">
+             <span>⚠️ CIRCUIT BREAKER ENGAGED. Bankroll Frozen.</span>
+             {session.breakerReason ? (
+               <span className="text-red-300 text-xs">{session.breakerReason} (Win Rate: {(session.rollingWinRate * 100).toFixed(1)}%)</span>
+             ) : (
+               <span className="text-red-300 text-xs">Rolling Win Rate: {(session.rollingWinRate * 100).toFixed(1)}%</span>
+             )}
            </p>
         </motion.div>
       )}
@@ -96,8 +101,13 @@ export default function StatusBanners({
            exit={{ opacity: 0, height: 0 }}
            className="bg-amber-500/10 border-2 border-amber-500/40 p-4 rounded-2xl flex items-center justify-center mb-4"
         >
-           <p className="text-amber-400 font-mono text-sm font-bold text-center">
-             ⚠️ ADVISORY: HIGH VOLATILITY. Rolling Win Rate: {(session.rollingWinRate * 100).toFixed(1)}%. Manual Pause Recommended.
+           <p className="text-amber-400 font-mono text-sm font-bold text-center flex flex-col gap-1">
+             <span>⚠️ ADVISORY: HIGH VOLATILITY. Manual Pause Recommended.</span>
+             {session.breakerReason ? (
+               <span className="text-amber-300 text-xs">{session.breakerReason} (Win Rate: {(session.rollingWinRate * 100).toFixed(1)}%)</span>
+             ) : (
+               <span className="text-amber-300 text-xs">Rolling Win Rate: {(session.rollingWinRate * 100).toFixed(1)}%</span>
+             )}
            </p>
         </motion.div>
       )}
