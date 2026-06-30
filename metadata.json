@@ -1,0 +1,8 @@
+{
+  "name": "KINETIC-DICE TERMINAL V1.0 | (THE APEX PREDATOR) ",
+  "description": "Kinetic-Dice Terminal is an institutional-grade, quantitative risk-management application for live-dealer roulette. Operating on a strict 2-unit exposure model, the engine translates kinetic momentum (Spin A and Spin B) into symmetrical, zero-overlap geometric strike zones. Featuring an autonomous tactical state machine, Pre-Flight table qualification, and real-time equity analytics, it strips human emotion from the casino environment and transforms variance into calculated, algorithmic arbitrage.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

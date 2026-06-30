@@ -1,0 +1,22 @@
+{
+  "short_name": "Kinetic-Dice V1.0",
+  "name": "Kinetic-Dice Terminal V1.0 APEX",
+  "description": "Deterministic kinetic dice matrix engine with Dynamic Yield Oracle and Tactical Circuit Breaker.",
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "display": "standalone",
+  "orientation": "any"
+}
