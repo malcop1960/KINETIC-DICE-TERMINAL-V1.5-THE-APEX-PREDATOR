@@ -7,12 +7,26 @@ import { SpinItem, StatusType, StrikeType, EngineState } from './types';
 import { calculateDynamicYield } from './logic/dynamicYield';
 
 export class KineticDiceEngine {
+    static readonly EUROPEAN_WHEEL = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+
+    static getPocketDistance(a: number, b: number): number {
+        const indexA = this.EUROPEAN_WHEEL.indexOf(a);
+        const indexB = this.EUROPEAN_WHEEL.indexOf(b);
+        if (indexA === -1 || indexB === -1) return 0;
+        
+        let dist = indexB - indexA;
+        if (dist < 0) dist += 37;
+        
+        if (dist > 18) dist -= 37;
+        return dist;
+    }
+
     static getDozen(num: number): number {
         if (num === 0) return 0;
         return Math.floor((num - 1) / 12) + 1;
     }
 
-    static calculateBase(a: number, b: number) {
+    static calculateLegacyBase(a: number, b: number) {
         const anchors = [0, 10, 20, 30];
         if (anchors.includes(a) || anchors.includes(b)) return { base: a + b, rule: "Rule 1 (Anchor)" };
         
@@ -38,6 +52,46 @@ export class KineticDiceEngine {
         return { base: a + b, rule: "Rule 6 (Default)" };
     }
 
+    static calculateSymmetricalBase(a: number, b: number) {
+        const anchors = [0, 10, 20, 30];
+        
+        if (anchors.includes(a) || anchors.includes(b)) {
+            let base = (a + b) % 37;
+            return { base: base === 0 ? 36 : base, rule: "Rule 1 (Anchor-Sym)" };
+        }
+        
+        if (a === b && a !== 0) {
+            let base = ((a * 2) + b) % 37;
+            return { base: base === 0 ? 36 : base, rule: "Rule 2 (Harmonic)" };
+        }
+        
+        const dozA = this.getDozen(a); const dozB = this.getDozen(b);
+        if (dozA === dozB && a > 0 && b > 0) {
+            let base = (a * b) % 37;
+            return { base: base === 0 ? 36 : base, rule: "Rule 3 (Cross-Product)" };
+        }
+        
+        const strA = a.toString(); const strB = b.toString();
+        const shared = [...new Set(strA)].filter(c => strB.includes(c));
+        if (shared.length > 0) {
+            let remA = strA; let remB = strB;
+            shared.forEach(c => { remA = remA.split(c).join(''); remB = remB.split(c).join(''); });
+            const valA = remA === '' ? 0 : parseInt(remA, 10);
+            const valB = remB === '' ? 0 : parseInt(remB, 10);
+            const sharedVal = parseInt(shared[0], 10);
+            let base = (valA + valB + (sharedVal * 10)) % 37;
+            return { base: base === 0 ? 36 : base, rule: "Rule 4 (Cipher)" };
+        }
+        
+        if (a > 18 && b > 18) {
+            let base = (a + b + 18) % 37;
+            return { base: base === 0 ? 36 : base, rule: "Rule 5 (Mirror-Sym)" };
+        }
+        
+        let base = (a + b) % 37;
+        return { base: base === 0 ? 36 : base, rule: "Rule 6 (Default-Sym)" };
+    }
+
     static applyAlignment(base: number, lastHit: number): number {
         let t = base;
         while (t > 36) t -= 36; while (t < 0) t = Math.abs(t);
@@ -51,17 +105,36 @@ export class KineticDiceEngine {
         return Math.abs(t);
     }
 
-    static getTarget(spinA: number, spinB: number): any {
+    static getTarget(spinA: number, spinB: number, useSymmetricalMatrix: boolean, dealerVelocity: number, useVelocityOffset: boolean): any {
         if (spinA === 0 || spinB === 0) return { dsA: 0, dsB: 0, rule: "Zero Pause (Skip)" };
 
-        const { base, rule } = this.calculateBase(spinA, spinB);
+        const { base, rule } = useSymmetricalMatrix 
+            ? this.calculateSymmetricalBase(spinA, spinB) 
+            : this.calculateLegacyBase(spinA, spinB);
+            
         const finalTarget = this.applyAlignment(base, spinB);
         if (finalTarget === 0) return { dsA: 0, dsB: 0, rule: "Zero Pause (Skip)" };
 
-        const dsA = Math.floor((finalTarget - 1) / 6) + 1;
+        let offsetRuleStr = "";
+        let finalPhysicalTarget = finalTarget;
+
+        if (useVelocityOffset && dealerVelocity !== 0) {
+            const currentIndex = this.EUROPEAN_WHEEL.indexOf(finalTarget);
+            if (currentIndex !== -1) {
+                let newIndex = (currentIndex + dealerVelocity) % 37;
+                if (newIndex < 0) newIndex += 37;
+                finalPhysicalTarget = this.EUROPEAN_WHEEL[newIndex];
+                const sign = dealerVelocity > 0 ? '+' : '';
+                offsetRuleStr = ` | Offset: ${sign}${dealerVelocity}`;
+                
+                if (finalPhysicalTarget === 0) return { dsA: 0, dsB: 0, rule: `Zero Pause (Skip from Offset)` };
+            }
+        }
+
+        const dsA = Math.floor((finalPhysicalTarget - 1) / 6) + 1;
         const dsB = 7 - dsA; // Dice Complement
 
-        return { dsA, dsB, rule: `${rule} -> Target: ${finalTarget}` };
+        return { dsA, dsB, rule: `${rule} -> Target: ${finalTarget}${offsetRuleStr}` };
     }
 
     static getDoubleStreetNumbers(dsIndex: number): number[] {
@@ -166,7 +239,21 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
 
   let isDealerCalibrating = false;
   let nextDealerCalibrationSpins = state.dealerCalibrationSpins || 0;
-  
+  let newDealerVelocity = state.dealerVelocity || 0;
+
+  if (state.spins.length > 0) {
+      const lastSpinHit = state.spins[state.spins.length - 1].hit;
+      const dist = KineticDiceEngine.getPocketDistance(lastSpinHit, hit);
+      
+      if (state.dealerCalibrationSpins === 1) {
+          // Second spin of calibration: establish baseline
+          newDealerVelocity = dist;
+      } else if (state.dealerCalibrationSpins === 0 && !state.isCalibrating) {
+          // Rolling micro-calibration: 80% history, 20% new
+          newDealerVelocity = Math.round((newDealerVelocity * 0.8) + (dist * 0.2));
+      }
+  }
+
   if (nextDealerCalibrationSpins > 0) {
       isDealerCalibrating = true;
       nextDealerCalibrationSpins -= 1;
@@ -208,7 +295,7 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
       if (state.spins.length >= 1) { // we need at least 1 previous spin to be Spin A
           const spinB = hit;
           const spinA = state.spins[state.spins.length - 1].hit;
-          const target = KineticDiceEngine.getTarget(spinA, spinB);
+          const target = KineticDiceEngine.getTarget(spinA, spinB, state.useSymmetricalMatrix, newDealerVelocity, state.useVelocityOffset);
           newDSA = target.dsA;
           newDSB = target.dsB;
           newRule = target.rule;
@@ -265,6 +352,9 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
     consecutiveMisses: newConsecutiveMisses,
     entropyFails: newEntropyFails,
     breakerReason: newBreakerReason,
+    useSymmetricalMatrix: state.useSymmetricalMatrix,
+    useVelocityOffset: state.useVelocityOffset,
+    dealerVelocity: newDealerVelocity,
   };
 }
 

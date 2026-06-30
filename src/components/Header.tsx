@@ -7,13 +7,17 @@ import React from 'react';
 import { Crosshair, Activity, HelpCircle, BarChart3 } from 'lucide-react';
 
 import { APP_CONFIG } from '../config';
-import SessionTimer from './SessionTimer';
 
 interface HeaderProps {
   activeTab: 'engine' | 'documentation' | 'analytics';
   setActiveTab: (tab: 'engine' | 'documentation' | 'analytics') => void;
   isAutoBreakerEnabled?: boolean;
   handleToggleAutoBreaker?: () => void;
+  useSymmetricalMatrix?: boolean;
+  handleToggleMatrixMode?: () => void;
+  useVelocityOffset?: boolean;
+  dealerVelocity?: number;
+  handleToggleVelocityOffset?: () => void;
   handleDealerChange?: () => void;
   spins?: any[];
 }
@@ -23,6 +27,11 @@ export default function Header({
   setActiveTab,
   isAutoBreakerEnabled = true,
   handleToggleAutoBreaker,
+  useSymmetricalMatrix = false,
+  handleToggleMatrixMode,
+  useVelocityOffset = false,
+  dealerVelocity = 0,
+  handleToggleVelocityOffset,
   handleDealerChange,
   spins,
 }: HeaderProps) {
@@ -38,7 +47,7 @@ export default function Header({
               KINETIC-DICE TERMINAL
             </h1>
             <span className="text-[10px] border px-2 py-0.5 rounded-full font-mono font-bold tracking-wider uppercase transition-colors duration-250 bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-              V1.0 APEX
+              V1.5 APEX
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5 font-mono">
@@ -70,7 +79,32 @@ export default function Header({
              AUTO BREAKER: {isAutoBreakerEnabled ? 'ON' : 'OFF'}
           </button>
         )}
-        <SessionTimer />
+        {handleToggleMatrixMode && (
+          <button
+            onClick={handleToggleMatrixMode}
+            className={`px-3 py-1.5 text-[10px] font-mono font-bold tracking-wider rounded-md border flex items-center gap-2 transition-all ${
+              useSymmetricalMatrix 
+              ? 'bg-purple-500/10 text-purple-400 border-purple-500/30 hover:bg-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.1)]' 
+              : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+            }`}
+          >
+             <div className={`w-1.5 h-1.5 rounded-full ${useSymmetricalMatrix ? 'bg-purple-400 animate-pulse' : 'bg-slate-500'}`} />
+             MATRIX: {useSymmetricalMatrix ? 'SYMMETRICAL' : 'LEGACY'}
+          </button>
+        )}
+        {handleToggleVelocityOffset && (
+          <button
+            onClick={handleToggleVelocityOffset}
+            className={`px-3 py-1.5 text-[10px] font-mono font-bold tracking-wider rounded-md border flex items-center gap-2 transition-all ${
+              useVelocityOffset 
+              ? 'bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.1)]' 
+              : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+            }`}
+          >
+             <div className={`w-1.5 h-1.5 rounded-full ${useVelocityOffset ? 'bg-rose-400 animate-pulse' : 'bg-slate-500'}`} />
+             OFFSET: {useVelocityOffset ? `${dealerVelocity > 0 ? '+' : ''}${dealerVelocity}` : 'OFF'}
+          </button>
+        )}
         
         {/* Navigation Tab */}
         <div className="flex items-center gap-2 bg-slate-900/60 p-1 rounded-lg border border-slate-800">

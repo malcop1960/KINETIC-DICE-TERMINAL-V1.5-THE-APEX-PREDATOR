@@ -32,6 +32,8 @@ export default function MobileLandscapeView({
   handleToggleDynamicYield,
   handleToggleManualPause,
   handleToggleAutoBreaker,
+  handleToggleMatrixMode,
+  handleToggleVelocityOffset,
   handleDealerChange,
   handleEngageLivePlay,
   handleAbortCalibration,
@@ -44,6 +46,11 @@ export default function MobileLandscapeView({
         setActiveTab={setActiveTab}
         isAutoBreakerEnabled={session.isAutoBreakerEnabled}
         handleToggleAutoBreaker={handleToggleAutoBreaker}
+        useSymmetricalMatrix={session.useSymmetricalMatrix}
+        handleToggleMatrixMode={handleToggleMatrixMode}
+        useVelocityOffset={session.useVelocityOffset}
+        dealerVelocity={session.dealerVelocity}
+        handleToggleVelocityOffset={handleToggleVelocityOffset}
         handleDealerChange={handleDealerChange}
         spins={session.spins}
       />

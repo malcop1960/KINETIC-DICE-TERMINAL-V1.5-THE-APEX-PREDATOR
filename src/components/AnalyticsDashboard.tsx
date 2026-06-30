@@ -13,7 +13,7 @@ import {
   Cell,
   ReferenceLine,
 } from 'recharts';
-import { Activity, TrendingDown, TrendingUp, Target, ShieldAlert } from 'lucide-react';
+import { Activity, TrendingDown, TrendingUp, Target, ShieldAlert, Download } from 'lucide-react';
 import StrikeZoneHeatmapD3 from './StrikeZoneHeatmapD3';
 
 interface AnalyticsDashboardProps {
@@ -91,9 +91,71 @@ export default function AnalyticsDashboard({ session }: AnalyticsDashboardProps)
     return null;
   };
 
+  const handleExportJSON = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(session, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `kinetic-dice-session-${Date.now()}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
+  const handleExportCSV = () => {
+    const headers = [
+      'SpinIndex', 'Timestamp', 'IsRealMoney', 'Hit', 'TargetA', 'TargetB', 
+      'RuleUsed', 'StrikeType', 'ScoreDelta', 'AccumulatedScore', 'StatusBeforeSpin', 'StatusAfterSpin'
+    ];
+    
+    const rows = session.spins.map(spin => [
+      spin.spinIndex,
+      new Date(spin.timestamp).toISOString(),
+      spin.isRealMoney,
+      spin.hit,
+      spin.targetA,
+      spin.targetB,
+      `"${spin.ruleUsed}"`,
+      spin.strikeType,
+      spin.scoreDelta,
+      spin.accumulatedScore,
+      spin.statusBeforeSpin,
+      spin.statusAfterSpin
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(",") + "\n" 
+      + rows.map(e => e.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", encodedUri);
+    downloadAnchorNode.setAttribute("download", `kinetic-dice-spins-${Date.now()}.csv`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
   return (
     <div className="flex flex-col space-y-6 w-full animate-in fade-in zoom-in-95 duration-500">
       
+      {/* 📥 DATA EXPORT CONTROLS */}
+      <div className="flex justify-end gap-3 -mb-2">
+        <button 
+          onClick={handleExportCSV}
+          className="flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 rounded-xl text-[11px] font-mono font-bold text-slate-300 transition-colors shadow-sm"
+        >
+          <Download className="w-3.5 h-3.5 text-cyan-400" />
+          EXPORT CSV
+        </button>
+        <button 
+          onClick={handleExportJSON}
+          className="flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 rounded-xl text-[11px] font-mono font-bold text-slate-300 transition-colors shadow-sm"
+        >
+          <Download className="w-3.5 h-3.5 text-indigo-400" />
+          EXPORT RAW JSON
+        </button>
+      </div>
+
       {/* 🟢 KPI RIBBON */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
         {/* Net Profit */}

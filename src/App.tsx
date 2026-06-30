@@ -22,34 +22,61 @@ import { audioSystem } from './lib/audio';
 
 export default function App() {
   // Session State
-  const [session, setSession] = useState<EngineState>({
-    isCalibrating: true,
-    isManualPause: false,
-    isAutoBreakerEnabled: true,
-    tableRequiresPause: false,
-    rollingWinRate: 0,
-    theoreticalNet: 0,
-    spins: [],
-    currentScore: 0,
-    sessionHigh: 0,
-    sessionLow: 0,
-    status: 'ACTIVE',
-    dealerCalibrationSpins: 0,
-    nextDSA: 0,
-    nextDSB: 0,
-    nextRule: 'Calibration',
-    dynamicYieldOracleEnabled: false,
-    exitReason: null,
-    consecutiveMisses: 0,
-    entropyFails: 0,
-    breakerReason: null,
+  const [session, setSession] = useState<EngineState>(() => {
+    try {
+      const saved = localStorage.getItem('kinetic_dice_session_v1_5');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Failed to parse session from localStorage', e);
+    }
+    return {
+      isCalibrating: true,
+      isManualPause: false,
+      isAutoBreakerEnabled: true,
+      tableRequiresPause: false,
+      rollingWinRate: 0,
+      theoreticalNet: 0,
+      spins: [],
+      currentScore: 0,
+      sessionHigh: 0,
+      sessionLow: 0,
+      status: 'ACTIVE',
+      dealerCalibrationSpins: 0,
+      nextDSA: 0,
+      nextDSB: 0,
+      nextRule: 'Calibration',
+      dynamicYieldOracleEnabled: false,
+      exitReason: null,
+      consecutiveMisses: 0,
+      entropyFails: 0,
+      breakerReason: null,
+      useSymmetricalMatrix: false,
+      useVelocityOffset: false,
+      dealerVelocity: 0,
+    };
   });
 
   // Track undone spins for standard Redo protocol operations
   const [redoStack, setRedoStack] = useState<number[]>([]);
 
   // Manual score adjustments tracker
-  const [manualScoreOffset, setManualScoreOffset] = useState<number>(0);
+  const [manualScoreOffset, setManualScoreOffset] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('kinetic_dice_offset_v1_5');
+      if (saved) return Number(saved);
+    } catch (e) {
+      console.error('Failed to parse offset', e);
+    }
+    return 0;
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('kinetic_dice_session_v1_5', JSON.stringify(session));
+  }, [session]);
+
+  React.useEffect(() => {
+    localStorage.setItem('kinetic_dice_offset_v1_5', String(manualScoreOffset));
+  }, [manualScoreOffset]);
 
   const [activeTab, setActiveTab] = useState<'engine' | 'documentation' | 'analytics'>('engine');
 
@@ -94,6 +121,9 @@ export default function App() {
       consecutiveMisses: 0,
       entropyFails: 0,
       breakerReason: null,
+      useSymmetricalMatrix: session.useSymmetricalMatrix,
+      useVelocityOffset: session.useVelocityOffset,
+      dealerVelocity: session.dealerVelocity,
     };
 
     newSpins.forEach(spin => {
@@ -138,6 +168,9 @@ export default function App() {
       consecutiveMisses: 0,
       entropyFails: 0,
       breakerReason: null,
+      useSymmetricalMatrix: false,
+      useVelocityOffset: false,
+      dealerVelocity: 0,
     });
     setManualScoreOffset(0);
     setRedoStack([]);
@@ -200,6 +233,14 @@ export default function App() {
 
   const handleToggleAutoBreaker = () => {
     setSession(prev => ({ ...prev, isAutoBreakerEnabled: !prev.isAutoBreakerEnabled }));
+  };
+
+  const handleToggleMatrixMode = () => {
+    setSession(prev => ({ ...prev, useSymmetricalMatrix: !prev.useSymmetricalMatrix }));
+  };
+
+  const handleToggleVelocityOffset = () => {
+    setSession(prev => ({ ...prev, useVelocityOffset: !prev.useVelocityOffset }));
   };
 
   // Volatility Alert Tracker
@@ -270,6 +311,8 @@ export default function App() {
     handleToggleDynamicYield,
     handleToggleManualPause,
     handleToggleAutoBreaker,
+    handleToggleMatrixMode,
+    handleToggleVelocityOffset,
     handleEngageLivePlay,
     handleAbortCalibration,
     handleDealerChange,
@@ -286,11 +329,15 @@ export default function App() {
       </div>
 
       <div id="kinetic-dice-container" className="max-w-7xl mx-auto">
-        <PWAInstallController />
         {deviceMode === 'mobile-portrait' && <MobilePortraitView {...layoutProps} />}
         {deviceMode === 'mobile-landscape' && <MobileLandscapeView {...layoutProps} />}
         {deviceMode === 'laptop' && <LaptopView {...layoutProps} />}
         {deviceMode === 'desktop' && <DesktopView {...layoutProps} />}
+        
+        {/* PWA Install Prompt at Footer */}
+        <div className="mt-8 mb-4">
+          <PWAInstallController />
+        </div>
       </div>
     </div>
   );

@@ -125,7 +125,7 @@ export default function PWAInstallController() {
           <div>
             <div className="flex items-center gap-2">
               <h4 className="font-display font-bold text-xs tracking-wide text-slate-200">
-                INSTALL KINETIC-DICE TERMINAL V1.0 APEX
+                INSTALL KINETIC-DICE TERMINAL V1.5 APEX
               </h4>
               <span className="bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[8px] font-mono font-black uppercase px-2 py-0.5 rounded-full">
                 PWA Core

@@ -10,34 +10,50 @@ export function calculateDynamicYield(state: any, isOracleOn: boolean) {
         const spinCount = state.spins.length;
         const peak = state.sessionHigh || 0;
 
-        // 2. MATRIX EFFICIENCY (Rolling Momentum over last 10 spins)
-        const lookback = Math.min(10, spinCount);
-        let rollingNet = 0;
-        if (lookback > 0) {
-            const recent = state.spins.slice(-lookback);
-            recent.forEach((s: any) => rollingNet += s.scoreChange || s.scoreDelta || 0); // Using scoreDelta based on previous observation
-        }
-
-        // 3. FATIGUE EJECTOR (Time Decay)
-        // Kinetic-Dice is a slow grind. Shrink the hard stop by 1 unit every 15 spins to prevent endless zombie sessions.
+        // 2. FATIGUE EJECTOR (Time Decay)
+        // Kinetic-Dice is a slow grind. Shrink the hard stop by 1 unit every 15 spins.
         const fatigue = Math.floor(spinCount / 15);
         hardStop = Math.max(-10, -20 + fatigue);
 
-        // 4. THE RATCHET (Profit Floors)
-        // Because target units are small, we lock profit tiers earlier.
-        if (peak >= 12) hardStop = Math.max(hardStop, 0);   // Breakeven Lock
-        if (peak >= 24) hardStop = Math.max(hardStop, 12);  // Tier 1 Lock
-        if (peak >= 40) hardStop = Math.max(hardStop, 25);  // Tier 2 Lock
+        // 3. PARABOLIC TRAILING STOP (Variance-Adjusted)
+        trailActivation = 12; // Activate trailing protection when +12U is reached
 
-        // 5. ELASTIC TRAIL (Dynamic Ceilings)
-        trailActivation = 12; // Turn on protection much earlier
+        if (peak >= trailActivation) {
+            // Lock Breakeven
+            hardStop = Math.max(hardStop, 0);
 
-        if (rollingNet >= 8) {
-            trailGap = 7; // Momentum is trending: Widen gap to let trend run
-        } else if (rollingNet < 0) {
-            trailGap = 3; // Momentum is Drying Up: Snap the trap shut immediately
+            // Calculate Session Standard Deviation (Volatility)
+            const liveSpins = state.spins.filter((s: any) => s.isRealMoney);
+            let stdDev = 2.4; // Base variance assumption
+            
+            if (liveSpins.length > 5) {
+                const scoreDeltas = liveSpins.map((s: any) => s.scoreDelta);
+                const mean = scoreDeltas.reduce((a: number, b: number) => a + b, 0) / scoreDeltas.length;
+                const variance = scoreDeltas.reduce((a: number, b: number) => a + Math.pow(b - mean, 2), 0) / scoreDeltas.length;
+                stdDev = Math.sqrt(variance) || 2.4;
+            }
+
+            // The Parabolic Curve: Gap naturally tightens as peak increases
+            // Base gap is wide (8U) at the start of a run. For every 10U of profit, shrink by 1.5U.
+            const peakProgress = Math.max(0, peak - trailActivation);
+            const parabolicBaseGap = 8 - (peakProgress * 0.15); 
+            
+            // Variance Multiplier: Expand gap if table is highly volatile, shrink if stable.
+            const volatilityMultiplier = stdDev / 2.4; 
+            
+            let fluidGap = parabolicBaseGap * volatilityMultiplier;
+            
+            // Constrain the gap between 3 and 10
+            trailGap = Math.max(3, Math.min(10, Math.round(fluidGap)));
         } else {
-            trailGap = 4; // Cruising Speed
+            // If not activated yet, use standard matrix efficiency to set pre-trail gap
+            const lookback = Math.min(10, spinCount);
+            let rollingNet = 0;
+            if (lookback > 0) {
+                const recent = state.spins.slice(-lookback);
+                recent.forEach((s: any) => rollingNet += s.scoreChange || s.scoreDelta || 0);
+            }
+            trailGap = rollingNet >= 8 ? 7 : 4;
         }
     }
 

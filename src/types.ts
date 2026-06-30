@@ -42,4 +42,7 @@ export interface EngineState {
   consecutiveMisses: number;
   entropyFails: number;
   breakerReason: string | null;
+  useSymmetricalMatrix: boolean;
+  useVelocityOffset: boolean;
+  dealerVelocity: number;
 }

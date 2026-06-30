@@ -1,6 +1,6 @@
 {
-  "short_name": "Kinetic-Dice V1.0",
-  "name": "Kinetic-Dice Terminal V1.0 APEX",
+  "short_name": "Kinetic-Dice V1.5",
+  "name": "Kinetic-Dice Terminal V1.5 APEX",
   "description": "Deterministic kinetic dice matrix engine with Dynamic Yield Oracle and Tactical Circuit Breaker.",
   "icons": [
     {
