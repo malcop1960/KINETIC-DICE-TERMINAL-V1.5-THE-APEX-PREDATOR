@@ -99,7 +99,7 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
       strikeType = 'Zero Pause';
   }
 
-  const lookbackWindow = state.spins.slice(-12);
+  const lookbackWindow = state.spins.slice(-9);
   let activeRounds = 0;
   let winRounds = 0;
 
