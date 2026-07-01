@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
-import { Crosshair, Activity, HelpCircle, BarChart3 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Crosshair, Activity, HelpCircle, BarChart3, Settings } from 'lucide-react';
 
 import { APP_CONFIG } from '../config';
 
@@ -35,6 +35,21 @@ export default function Header({
   handleDealerChange,
   spins,
 }: HeaderProps) {
+  const [isTacticsMenuOpen, setIsTacticsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsTacticsMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const hasOverrideActive = !isAutoBreakerEnabled || useSymmetricalMatrix || useVelocityOffset;
+
   return (
     <header id="header-section" className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-900 pb-4 gap-4">
       <div className="flex items-center gap-3">
@@ -66,45 +81,71 @@ export default function Header({
              🔄 DEALER CHANGE
           </button>
         )}
-        {handleToggleAutoBreaker && (
+        
+        <div className="relative" ref={menuRef}>
           <button
-            onClick={handleToggleAutoBreaker}
+            onClick={() => setIsTacticsMenuOpen(!isTacticsMenuOpen)}
             className={`px-3 py-1.5 text-[10px] font-mono font-bold tracking-wider rounded-md border flex items-center gap-2 transition-all ${
-              isAutoBreakerEnabled 
-              ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]' 
+              hasOverrideActive 
+              ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/20 shadow-[0_0_10px_rgba(99,102,241,0.2)]' 
               : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
             }`}
           >
-             <div className={`w-1.5 h-1.5 rounded-full ${isAutoBreakerEnabled ? 'bg-amber-400 animate-pulse' : 'bg-slate-500'}`} />
-             AUTO BREAKER: {isAutoBreakerEnabled ? 'ON' : 'OFF'}
+            <Settings className={`h-3 w-3 ${isTacticsMenuOpen ? 'rotate-90' : ''} transition-transform duration-300`} />
+            TACTICAL OVERRIDES
+            {hasOverrideActive && (
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse ml-1" />
+            )}
           </button>
-        )}
-        {handleToggleMatrixMode && (
-          <button
-            onClick={handleToggleMatrixMode}
-            className={`px-3 py-1.5 text-[10px] font-mono font-bold tracking-wider rounded-md border flex items-center gap-2 transition-all ${
-              useSymmetricalMatrix 
-              ? 'bg-purple-500/10 text-purple-400 border-purple-500/30 hover:bg-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.1)]' 
-              : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
-            }`}
-          >
-             <div className={`w-1.5 h-1.5 rounded-full ${useSymmetricalMatrix ? 'bg-purple-400 animate-pulse' : 'bg-slate-500'}`} />
-             MATRIX: {useSymmetricalMatrix ? 'SYMMETRICAL' : 'LEGACY'}
-          </button>
-        )}
-        {handleToggleVelocityOffset && (
-          <button
-            onClick={handleToggleVelocityOffset}
-            className={`px-3 py-1.5 text-[10px] font-mono font-bold tracking-wider rounded-md border flex items-center gap-2 transition-all ${
-              useVelocityOffset 
-              ? 'bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.1)]' 
-              : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
-            }`}
-          >
-             <div className={`w-1.5 h-1.5 rounded-full ${useVelocityOffset ? 'bg-rose-400 animate-pulse' : 'bg-slate-500'}`} />
-             OFFSET: {useVelocityOffset ? `${dealerVelocity > 0 ? '+' : ''}${dealerVelocity}` : 'OFF'}
-          </button>
-        )}
+
+          {isTacticsMenuOpen && (
+            <div className="absolute right-0 md:left-0 md:right-auto top-full mt-2 w-48 bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-lg p-2 flex flex-col gap-2 z-50 shadow-2xl">
+              <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest px-2 pt-1 pb-2 border-b border-slate-800/50">
+                System Overrides
+              </div>
+              
+              {handleToggleAutoBreaker && (
+                <button
+                  onClick={handleToggleAutoBreaker}
+                  className={`w-full px-3 py-2 text-[10px] font-mono font-bold tracking-wider rounded-md border flex items-center gap-2 transition-all ${
+                    isAutoBreakerEnabled 
+                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20' 
+                    : 'bg-slate-800/50 text-slate-400 border-slate-700/50 hover:bg-slate-800'
+                  }`}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full ${isAutoBreakerEnabled ? 'bg-amber-400 animate-pulse' : 'bg-slate-600'}`} />
+                  BREAKER: {isAutoBreakerEnabled ? 'ON' : 'OFF'}
+                </button>
+              )}
+              {handleToggleMatrixMode && (
+                <button
+                  onClick={handleToggleMatrixMode}
+                  className={`w-full px-3 py-2 text-[10px] font-mono font-bold tracking-wider rounded-md border flex items-center gap-2 transition-all ${
+                    useSymmetricalMatrix 
+                    ? 'bg-purple-500/10 text-purple-400 border-purple-500/30 hover:bg-purple-500/20' 
+                    : 'bg-slate-800/50 text-slate-400 border-slate-700/50 hover:bg-slate-800'
+                  }`}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full ${useSymmetricalMatrix ? 'bg-purple-400 animate-pulse' : 'bg-slate-600'}`} />
+                  MATRIX: {useSymmetricalMatrix ? 'SYM' : 'LEGACY'}
+                </button>
+              )}
+              {handleToggleVelocityOffset && (
+                <button
+                  onClick={handleToggleVelocityOffset}
+                  className={`w-full px-3 py-2 text-[10px] font-mono font-bold tracking-wider rounded-md border flex items-center gap-2 transition-all ${
+                    useVelocityOffset 
+                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20' 
+                    : 'bg-slate-800/50 text-slate-400 border-slate-700/50 hover:bg-slate-800'
+                  }`}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full ${useVelocityOffset ? 'bg-rose-400 animate-pulse' : 'bg-slate-600'}`} />
+                  OFFSET: {useVelocityOffset ? `${dealerVelocity > 0 ? '+' : ''}${dealerVelocity}` : 'OFF'}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
         
         {/* Navigation Tab */}
         <div className="flex items-center gap-2 bg-slate-900/60 p-1 rounded-lg border border-slate-800">
