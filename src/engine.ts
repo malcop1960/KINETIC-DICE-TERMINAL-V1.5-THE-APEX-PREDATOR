@@ -285,8 +285,11 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
           }
       } else {
           // If we were paused, the bet was virtual. Log it to theoretical net.
+          // BUT only if we are in ACTIVE mode. In Pre-flight, a pause should FREEZE the theoretical net.
           if (state.nextDSA > 0 && state.nextDSB > 0 && strikeType !== 'Zero Pause') {
-             nextTheoreticalNet += scoreDelta;
+             if (!isCalibrating) {
+                nextTheoreticalNet += scoreDelta;
+             }
           }
       }
   }
