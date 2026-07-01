@@ -56,8 +56,9 @@ export default function App() {
     };
   });
 
-  // Track undone spins for standard Redo protocol operations
-  const [redoStack, setRedoStack] = useState<number[]>([]);
+  // Track full historical snapshots for perfect Undo/Redo protocol operations
+  const [pastStates, setPastStates] = useState<EngineState[]>([]);
+  const [futureStates, setFutureStates] = useState<EngineState[]>([]);
 
   // Manual score adjustments tracker
   const [manualScoreOffset, setManualScoreOffset] = useState<number>(() => {
@@ -86,63 +87,31 @@ export default function App() {
   // Handle adding a new spin number
   const handleAddSpin = (num: number) => {
     if (session.status === 'EXIT_SIGNAL' || session.status === 'SESSION_COMPLETE' || session.status === 'STOP_LOSS_REACHED') return;
+    setPastStates(prev => [...prev, session]);
     setSession(prev => addSpinToState(prev, num));
-    setRedoStack([]); // direct selections clear forward redo state
+    setFutureStates([]); // direct selections clear forward redo state
   };
 
-  // Undo the last spin
+  // Undo the last action/spin (Restores exact historical EngineState snapshot)
   const handleUndo = () => {
-    if (session.spins.length === 0) return;
+    if (pastStates.length === 0) return;
     
-    const lastSpin = session.spins[session.spins.length - 1];
-    setRedoStack(prev => [...prev, lastSpin.hit]);
-
-    const newSpins = session.spins.slice(0, -1);
+    const previousState = pastStates[pastStates.length - 1];
+    setPastStates(prev => prev.slice(0, -1));
+    setFutureStates(prev => [...prev, session]);
     
-    // Recalculate states from blank state to restore correct historical scoring
-    let tempState: EngineState = {
-      isCalibrating: true, // We start calibrating (or whatever the first spin was)
-      isManualPause: false,
-      isAutoBreakerEnabled: true,
-      tableRequiresPause: false,
-      rollingWinRate: 0,
-      theoreticalNet: 0,
-      spins: [],
-      currentScore: manualScoreOffset,
-      sessionHigh: manualScoreOffset,
-      sessionLow: manualScoreOffset,
-      status: 'ACTIVE',
-      dealerCalibrationSpins: 0,
-      nextDSA: 0,
-      nextDSB: 0,
-      nextRule: 'Calibration',
-      dynamicYieldOracleEnabled: session.dynamicYieldOracleEnabled,
-      exitReason: null,
-      consecutiveMisses: 0,
-      entropyFails: 0,
-      breakerReason: null,
-      useSymmetricalMatrix: session.useSymmetricalMatrix,
-      useVelocityOffset: session.useVelocityOffset,
-      dealerVelocity: session.dealerVelocity,
-    };
-
-    newSpins.forEach(spin => {
-      tempState.isCalibrating = !spin.isRealMoney;
-      tempState = addSpinToState(tempState, spin.hit);
-    });
-    
-    // Restore the current calibration state
-    tempState.isCalibrating = session.isCalibrating;
-
-    setSession(tempState);
+    setSession(previousState);
   };
 
-  // Redo the last undone spin
+  // Redo the last undone action/spin
   const handleRedo = () => {
-    if (redoStack.length === 0) return;
-    const nextSpin = redoStack[redoStack.length - 1];
-    setRedoStack(prev => prev.slice(0, -1));
-    setSession(prev => addSpinToState(prev, nextSpin));
+    if (futureStates.length === 0) return;
+    
+    const nextState = futureStates[futureStates.length - 1];
+    setFutureStates(prev => prev.slice(0, -1));
+    setPastStates(prev => [...prev, session]);
+    
+    setSession(nextState);
   };
 
   // Reset session
@@ -173,10 +142,13 @@ export default function App() {
       dealerVelocity: 0,
     });
     setManualScoreOffset(0);
-    setRedoStack([]);
+    setPastStates([]);
+    setFutureStates([]);
   };
 
   const handleEngageLivePlay = () => {
+    setPastStates(prev => [...prev, session]);
+    setFutureStates([]);
     setSession(prev => ({ 
       ...prev, 
       isCalibrating: false,
@@ -191,6 +163,8 @@ export default function App() {
   };
 
   const handleDealerChange = () => {
+    setPastStates(prev => [...prev, session]);
+    setFutureStates([]);
     setSession(prev => ({
       ...prev,
       dealerCalibrationSpins: 2,
@@ -302,7 +276,7 @@ export default function App() {
     handleAddSpin,
     handleUndo,
     handleRedo,
-    canRedo: redoStack.length > 0,
+    canRedo: futureStates.length > 0,
     handleReset,
     formatNumbersList,
     diagnosticExplanation,
