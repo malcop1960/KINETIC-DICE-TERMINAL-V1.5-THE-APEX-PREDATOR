@@ -26,6 +26,7 @@ export interface LayoutViewProps {
   handleToggleManualPause: () => void;
   handleToggleAutoBreaker: () => void;
   handleToggleMatrixMode?: () => void;
+  handleToggleVelocityOffset?: () => void;
   handleDealerChange?: () => void;
   handleEngageLivePlay: () => void;
   handleAbortCalibration: () => void;

@@ -18,6 +18,8 @@ interface HeaderProps {
   useVelocityOffset?: boolean;
   dealerVelocity?: number;
   handleToggleVelocityOffset?: () => void;
+  dynamicYieldOracleEnabled?: boolean;
+  handleToggleDynamicYield?: () => void;
   handleDealerChange?: () => void;
   spins?: any[];
 }
@@ -32,6 +34,8 @@ export default function Header({
   useVelocityOffset = false,
   dealerVelocity = 0,
   handleToggleVelocityOffset,
+  dynamicYieldOracleEnabled = false,
+  handleToggleDynamicYield,
   handleDealerChange,
   spins,
 }: HeaderProps) {
@@ -48,7 +52,7 @@ export default function Header({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const hasOverrideActive = !isAutoBreakerEnabled || useSymmetricalMatrix || useVelocityOffset;
+  const hasOverrideActive = !isAutoBreakerEnabled || useSymmetricalMatrix || useVelocityOffset || dynamicYieldOracleEnabled;
 
   return (
     <header id="header-section" className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-900 pb-4 gap-4">
@@ -141,6 +145,19 @@ export default function Header({
                 >
                   <div className={`w-1.5 h-1.5 rounded-full ${useVelocityOffset ? 'bg-rose-400 animate-pulse' : 'bg-slate-600'}`} />
                   OFFSET: {useVelocityOffset ? `${dealerVelocity > 0 ? '+' : ''}${dealerVelocity}` : 'OFF'}
+                </button>
+              )}
+              {handleToggleDynamicYield && (
+                <button
+                  onClick={handleToggleDynamicYield}
+                  className={`w-full px-3 py-2 text-[10px] font-mono font-bold tracking-wider rounded-md border flex items-center gap-2 transition-all ${
+                    dynamicYieldOracleEnabled 
+                    ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/20' 
+                    : 'bg-slate-800/50 text-slate-400 border-slate-700/50 hover:bg-slate-800'
+                  }`}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full ${dynamicYieldOracleEnabled ? 'bg-indigo-400 animate-pulse' : 'bg-slate-600'}`} />
+                  ORACLE: {dynamicYieldOracleEnabled ? 'ON' : 'OFF'}
                 </button>
               )}
             </div>

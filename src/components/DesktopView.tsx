@@ -15,8 +15,6 @@ import DatabaseLogsTable from './DatabaseLogsTable';
 import DocumentationView from './DocumentationView';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import TableQualifier from './TableQualifier';
-import ShieldControlPanel from './ShieldControlPanel';
-
 export default function DesktopView({
   session,
   activeTab,
@@ -52,6 +50,8 @@ export default function DesktopView({
         useVelocityOffset={session.useVelocityOffset}
         dealerVelocity={session.dealerVelocity}
         handleToggleVelocityOffset={handleToggleVelocityOffset}
+        dynamicYieldOracleEnabled={session.dynamicYieldOracleEnabled}
+        handleToggleDynamicYield={handleToggleDynamicYield}
         handleDealerChange={handleDealerChange}
         spins={session.spins}
       />
@@ -104,26 +104,18 @@ export default function DesktopView({
             />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div className="lg:col-span-8 bg-slate-900/10 border border-slate-900/40 p-1.5 rounded-[22px]">
-              <KeypadTerminal
-                spins={session.spins}
-                status={session.status}
-                handleAddSpin={handleAddSpin}
-                handleUndo={handleUndo}
-                handleRedo={handleRedo}
-                canRedo={canRedo}
-                handleReset={handleReset}
-                isManualPause={session.isManualPause}
-                handleToggleManualPause={handleToggleManualPause}
-              />
-            </div>
-            <div className="lg:col-span-4 flex flex-col gap-6">
-              <ShieldControlPanel 
-                dynamicYieldOracleEnabled={session.dynamicYieldOracleEnabled} 
-                onToggleOracle={handleToggleDynamicYield!} 
-              />
-            </div>
+          <div className="w-full bg-slate-900/10 border border-slate-900/40 p-1.5 rounded-[22px]">
+            <KeypadTerminal
+              spins={session.spins}
+              status={session.status}
+              handleAddSpin={handleAddSpin}
+              handleUndo={handleUndo}
+              handleRedo={handleRedo}
+              canRedo={canRedo}
+              handleReset={handleReset}
+              isManualPause={session.isManualPause}
+              handleToggleManualPause={handleToggleManualPause}
+            />
           </div>
 
           {/* Full Width Database Logs Table with dense rows */}

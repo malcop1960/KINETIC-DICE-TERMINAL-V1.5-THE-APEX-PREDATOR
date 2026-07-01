@@ -15,8 +15,6 @@ import DatabaseLogsTable from './DatabaseLogsTable';
 import DocumentationView from './DocumentationView';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import TableQualifier from './TableQualifier';
-import ShieldControlPanel from './ShieldControlPanel';
-
 export default function MobilePortraitView({
   session,
   activeTab,
@@ -52,6 +50,8 @@ export default function MobilePortraitView({
         useVelocityOffset={session.useVelocityOffset}
         dealerVelocity={session.dealerVelocity}
         handleToggleVelocityOffset={handleToggleVelocityOffset}
+        dynamicYieldOracleEnabled={session.dynamicYieldOracleEnabled}
+        handleToggleDynamicYield={handleToggleDynamicYield}
         handleDealerChange={handleDealerChange}
         spins={session.spins}
       />
@@ -102,11 +102,6 @@ export default function MobilePortraitView({
             nextDSB={session.nextDSB}
             numSpinsEntered={session.spins.length}
             formatNumbersList={formatNumbersList}
-          />
-
-          <ShieldControlPanel 
-            dynamicYieldOracleEnabled={session.dynamicYieldOracleEnabled} 
-            onToggleOracle={handleToggleDynamicYield!} 
           />
 
           {/* Keypad Terminal is high priority for portrait thumb usage */}

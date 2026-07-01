@@ -14,8 +14,6 @@ import DatabaseLogsTable from './DatabaseLogsTable';
 import DocumentationView from './DocumentationView';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import TableQualifier from './TableQualifier';
-import ShieldControlPanel from './ShieldControlPanel';
-
 export default function MobileLandscapeView({
   session,
   activeTab,
@@ -51,6 +49,8 @@ export default function MobileLandscapeView({
         useVelocityOffset={session.useVelocityOffset}
         dealerVelocity={session.dealerVelocity}
         handleToggleVelocityOffset={handleToggleVelocityOffset}
+        dynamicYieldOracleEnabled={session.dynamicYieldOracleEnabled}
+        handleToggleDynamicYield={handleToggleDynamicYield}
         handleDealerChange={handleDealerChange}
         spins={session.spins}
       />
@@ -123,10 +123,6 @@ export default function MobileLandscapeView({
               <LogsCard
                 diagnosticExplanation={diagnosticExplanation}
                 numSpinsEntered={session.spins.length}
-              />
-              <ShieldControlPanel 
-                dynamicYieldOracleEnabled={session.dynamicYieldOracleEnabled} 
-                onToggleOracle={handleToggleDynamicYield!} 
               />
             </div>
           </div>
