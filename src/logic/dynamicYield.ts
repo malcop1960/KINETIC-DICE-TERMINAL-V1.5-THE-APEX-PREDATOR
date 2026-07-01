@@ -1,6 +1,6 @@
-import { EngineState } from '../types';
+import { EngineState, SpinItem } from '../types';
 
-export function calculateDynamicYield(state: any, isOracleOn: boolean) {
+export function calculateDynamicYield(state: EngineState, isOracleOn: boolean) {
     // 1. STANDARD DEFAULTS (Used if Oracle is OFF)
     let hardStop = -20;
     let trailActivation = 25;
@@ -23,11 +23,11 @@ export function calculateDynamicYield(state: any, isOracleOn: boolean) {
             hardStop = Math.max(hardStop, 0);
 
             // Calculate Session Standard Deviation (Volatility)
-            const liveSpins = state.spins.filter((s: any) => s.isRealMoney);
+            const liveSpins = state.spins.filter((s: SpinItem) => s.isRealMoney);
             let stdDev = 2.4; // Base variance assumption
             
             if (liveSpins.length > 5) {
-                const scoreDeltas = liveSpins.map((s: any) => s.scoreDelta);
+                const scoreDeltas = liveSpins.map((s: SpinItem) => s.scoreDelta);
                 const mean = scoreDeltas.reduce((a: number, b: number) => a + b, 0) / scoreDeltas.length;
                 const variance = scoreDeltas.reduce((a: number, b: number) => a + Math.pow(b - mean, 2), 0) / scoreDeltas.length;
                 stdDev = Math.sqrt(variance) || 2.4;
@@ -51,7 +51,7 @@ export function calculateDynamicYield(state: any, isOracleOn: boolean) {
             let rollingNet = 0;
             if (lookback > 0) {
                 const recent = state.spins.slice(-lookback);
-                recent.forEach((s: any) => rollingNet += s.scoreChange || s.scoreDelta || 0);
+                recent.forEach((s: SpinItem) => rollingNet += s.scoreDelta);
             }
             trailGap = rollingNet >= 8 ? 7 : 4;
         }

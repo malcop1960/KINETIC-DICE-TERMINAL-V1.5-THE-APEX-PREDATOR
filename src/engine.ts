@@ -184,8 +184,10 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
           }
       }
   } else if (state.nextDSA === 0 && state.spins.length > 0) {
-      scoreDelta = 0; // Zero Pause
-      strikeType = 'Zero Pause';
+      if (state.dealerCalibrationSpins === 0) {
+          scoreDelta = 0; // Zero Pause
+          strikeType = 'Zero Pause';
+      }
   }
 
   const lookbackWindow = state.spins.slice(-9);
