@@ -92,7 +92,7 @@ export default function KeypadTerminal({
   }, [layout, null]);
 
   return (
-    <div className="lg:col-span-8 bg-slate-900/60 border border-slate-800 p-6 rounded-[22px] space-y-4">
+    <div className="w-full bg-slate-900/60 border border-slate-800 p-6 rounded-[22px] space-y-4">
       {handleToggleManualPause && (
         <button
           onClick={handleToggleManualPause}

@@ -229,6 +229,9 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
       currentReason = "VOLATILITY LOCK: Win Rate Degradation";
   }
 
+  // The pause status BEFORE evaluating this spin determines if its outcome is real or theoretical
+  const wasEffectivelyPaused = state.isManualPause || (state.isAutoBreakerEnabled && state.tableRequiresPause);
+
   if (wantsPause) {
       newTableRequiresPause = true;
       newBreakerReason = currentReason;
@@ -236,8 +239,6 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
       newTableRequiresPause = false;
       newBreakerReason = null;
   }
-
-  const isEffectivelyPaused = state.isManualPause || (state.isAutoBreakerEnabled && newTableRequiresPause);
 
   let isDealerCalibrating = false;
   let nextDealerCalibrationSpins = state.dealerCalibrationSpins || 0;
@@ -261,7 +262,7 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
       nextDealerCalibrationSpins -= 1;
   }
 
-  const spinIsRealMoney = !isCalibrating && !isEffectivelyPaused && !isDealerCalibrating;
+  const spinIsRealMoney = !isCalibrating && !wasEffectivelyPaused && !isDealerCalibrating;
 
   let nextScore = state.currentScore;
   let nextTheoreticalNet = state.theoreticalNet;
@@ -272,7 +273,7 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
       scoreDelta = 0;
       strikeType = 'Calibration';
   } else {
-      if (!isEffectivelyPaused) {
+      if (!wasEffectivelyPaused) {
           if (isCalibrating) {
               if (state.nextDSA > 0 && state.nextDSB > 0 && strikeType !== 'Zero Pause') {
                  nextTheoreticalNet += scoreDelta;
@@ -281,6 +282,11 @@ export function addSpinToState(state: EngineState, hit: number): EngineState {
               nextScore += scoreDelta;
               nextSessionHigh = Math.max(state.sessionHigh, nextScore);
               nextSessionLow = Math.min(nextSessionLow, nextScore);
+          }
+      } else {
+          // If we were paused, the bet was virtual. Log it to theoretical net.
+          if (state.nextDSA > 0 && state.nextDSB > 0 && strikeType !== 'Zero Pause') {
+             nextTheoreticalNet += scoreDelta;
           }
       }
   }
